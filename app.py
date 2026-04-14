@@ -1,36 +1,42 @@
 import streamlit as st
-from openai import OpenAI
+import math
 
-st.title("AI Math Assistant Chatbot 🤖")
-
-# SAFE CHECK (IMPORTANT)
-if "OPENAI_API_KEY" not in st.secrets:
-    st.error("API Key missing in Streamlit Secrets!")
-    st.stop()
-
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+st.title("AI Math Assistant Chatbot 🤖 (Smart Calculator)")
 
 if "chat" not in st.session_state:
     st.session_state.chat = []
+
+def solve_math(user):
+    try:
+        # SAFE MATH ENVIRONMENT
+        allowed_names = {
+            "sqrt": math.sqrt,
+            "pow": pow,
+            "abs": abs,
+            "round": round
+        }
+
+        # evaluate expression safely
+        result = eval(user, {"__builtins__": None}, allowed_names)
+        return f"Answer: {result}"
+
+    except:
+        # algebra formulas
+        if user.strip() == "(a+b)^2":
+            return "a² + 2ab + b²"
+        if user.strip() == "(a-b)^2":
+            return "a² - 2ab + b²"
+        if user.strip() == "a^2-b^2":
+            return "(a-b)(a+b)"
+
+        return "Try: 4+6, 10-3, 5*6, 10/2, sqrt(16), pow(2,3)"
 
 user = st.text_input("Ask your math question:")
 
 if user:
     st.session_state.chat.append(("You", user))
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful math tutor. Explain step by step."},
-                {"role": "user", "content": user}
-            ]
-        )
-
-        reply = response.choices[0].message.content
-
-    except Exception as e:
-        reply = f"Error from API: {e}"
+    reply = solve_math(user)
 
     st.session_state.chat.append(("AI", reply))
 
